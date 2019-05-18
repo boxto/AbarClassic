@@ -22,10 +22,10 @@ function Abar_chat(msg)
 		Abar_reset()
 	elseif msg=="lock" then
 		Abar_Frame:Hide()
-		--ebar_Frame:Hide()
+		ebar_Frame:Hide()
 	elseif msg=="unlock" then
 		Abar_Frame:Show()
-		--ebar_Frame:Show()
+		ebar_Frame:Show()
 	elseif msg=="range" then
 		abar.range= not(abar.range)
 		print('range is'.. Abar_Boo(abar.range));
@@ -77,20 +77,21 @@ function Abar_loaded()
 end
 
 function Abar_OnEvent(event, ...)
-	if (event == "COMBAT_LOG_EVENT") then
+	if (event == "COMBAT_LOG_EVENT_UNFILTERED") then
 		local subevent = select(2, ...)
+		local sourceGUID = select(4, ...)
+		if (sourceGUID == UnitGUID("player")) then
 		--local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = ...;
-		if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h == true then
-			--print(timestamp .. " " .. subevent);
-			Abar_selfhit()
-		elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h == true then
-			spell = select(13, ...)
-			Abar_spellhit(spell)
+			if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h == true then
+				Abar_selfhit()
+			elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h == true then
+				spell = select(13, ...)
+				Abar_spellhit(spell)
+			end
 		end
 	end
 	if event=="PLAYER_LEAVE_COMBAT" then Abar_reset() end
 	if event == "VARIABLES_LOADED" then Abar_loaded() end
-	--if event == "CHAT_MSG_SPELL_SELF_DAMAGE" then Abar_spellhit(arg1) end
 	if event == "VARIABLES_LOADED" then Abar_loaded() end
 end
 

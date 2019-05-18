@@ -3,7 +3,7 @@
  <Frame name="abar_core">
 	<Scripts>
 		<OnLoad>
-			self:RegisterEvent("COMBAT_LOG_EVENT")
+			self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 			self:RegisterEvent("PLAYER_LEAVE_COMBAT")
 			self:RegisterEvent("VARIABLES_LOADED")
 			
