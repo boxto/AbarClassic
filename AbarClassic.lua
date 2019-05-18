@@ -83,7 +83,7 @@ function Abar_OnEvent(event, ...)
 		if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h == true then
 			--print(timestamp .. " " .. subevent);
 			Abar_selfhit()
-		elseif (subevent == "SPELL_DAMAGE") and abar.h2h == true then
+		elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h == true then
 			spell = select(13, ...)
 			Abar_spellhit(spell)
 		end
@@ -98,11 +98,11 @@ function Abar_spellhit(spell)
 	if (spell == "Raptor Strike" or spell == "Heroic Strike" or
 	spell == "Maul" or spell == "Cleave") and abar.h2h==true then
 		hd,ld,ohd,lhd = UnitDamage("player")
-		hd,ld= hd-math.mod(hd,1),ld-math.mod(ld,1)
+		hd,ld= hd-math.fmod(hd,1),ld-math.fmod(ld,1)
 		if pofft == 0 then pofft=offt end
 		pont = ont
 		tons = ons
-		ons = ons - math.mod(ons,0.01)
+		ons = ons - math.fmod(ons,0.01)
 		Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
 	end
 end
@@ -197,3 +197,17 @@ end
 function Abar_Boo(inpt)
 	if inpt == true then return " ON" else return " OFF" end
 end
+
+-----------------------------------------------------------------------------------------------------------------------
+-- ENEMY BAR CODE --
+-----------------------------------------------------------------------------------------------------------------------
+
+function ebar_VL()
+	if not abar.pvp then abar.pvp = true end
+	if not abar.mob then abar.mob = true end
+	ebar_mh:SetPoint("LEFT",ebar_Frame,"TOPLEFT",6,-13)
+	ebar_oh:SetPoint("LEFT",ebar_Frame,"TOPLEFT",6,-35)
+	ebar_mhText:SetJustifyH("Left")
+	ebar_ohText:SetJustifyH("Left")
+end
+
