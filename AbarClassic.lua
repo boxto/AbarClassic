@@ -78,13 +78,33 @@ end
 
 function Abar_OnEvent(event, ...)
 	if (event == "COMBAT_LOG_EVENT") then
-		local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = ...;
-		if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h == true then Abar_selfhit() end
+		local subevent = select(2, ...)
+		--local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = ...;
+		if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h == true then
+			--print(timestamp .. " " .. subevent);
+			Abar_selfhit()
+		elseif (subevent == "SPELL_DAMAGE") and abar.h2h == true then
+			spell = select(13, ...)
+			Abar_spellhit(spell)
+		end
 	end
-  if event=="PLAYER_LEAVE_COMBAT" then Abar_reset() end
-  if event == "VARIABLES_LOADED" then Abar_loaded() end
-  --if event == "CHAT_MSG_SPELL_SELF_DAMAGE" then Abar_spellhit(arg1) end
-  if event == "VARIABLES_LOADED" then Abar_loaded() end
+	if event=="PLAYER_LEAVE_COMBAT" then Abar_reset() end
+	if event == "VARIABLES_LOADED" then Abar_loaded() end
+	--if event == "CHAT_MSG_SPELL_SELF_DAMAGE" then Abar_spellhit(arg1) end
+	if event == "VARIABLES_LOADED" then Abar_loaded() end
+end
+
+function Abar_spellhit(spell)
+	if (spell == "Raptor Strike" or spell == "Heroic Strike" or
+	spell == "Maul" or spell == "Cleave") and abar.h2h==true then
+		hd,ld,ohd,lhd = UnitDamage("player")
+		hd,ld= hd-math.mod(hd,1),ld-math.mod(ld,1)
+		if pofft == 0 then pofft=offt end
+		pont = ont
+		tons = ons
+		ons = ons - math.mod(ons,0.01)
+		Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
+	end
 end
 
 function Abar_selfhit()
