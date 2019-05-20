@@ -73,20 +73,37 @@ function Abar_loaded()
 	Abar_Oh:SetPoint("LEFT",Abar_Frame,"TOPLEFT",6,-35)
 	Abar_MhrText:SetJustifyH("Left")
 	Abar_OhText:SetJustifyH("Left")
-	--ebar_VL()
+	ebar_VL()
 end
 
 function Abar_OnEvent(event, ...)
 	if (event == "COMBAT_LOG_EVENT_UNFILTERED") then
 		local subevent = select(2, ...)
 		local sourceGUID = select(4, ...)
+		local destGUID = select(8, ...)
 		if (sourceGUID == UnitGUID("player")) then
-		--local timestamp, subevent, _, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags = ...;
-			if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h == true then
+			if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
 				Abar_selfhit()
-			elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h == true then
+			elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h then
 				spell = select(13, ...)
-				Abar_spellhit(spell)
+				Abar_spellhit(spell, true)
+			end
+		elseif (destGUID == UnitGUID("player") and sourceGUID == UnitGUID("target")) then
+			if (UnitIsPlayer("target")) then
+				if (abar.pvp) then
+					if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
+						ebar_set()
+					elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h then
+						spell = select(13, ...)
+						Abar_spellhit(spell, false)
+					end
+				end
+			else
+				if (abar.mob) then
+						if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
+							ebar_set()
+						end
+				end
 			end
 		end
 	end
@@ -95,16 +112,20 @@ function Abar_OnEvent(event, ...)
 	if event == "VARIABLES_LOADED" then Abar_loaded() end
 end
 
-function Abar_spellhit(spell)
+function Abar_spellhit(spell, player)
 	if (spell == "Raptor Strike" or spell == "Heroic Strike" or
-	spell == "Maul" or spell == "Cleave") and abar.h2h==true then
+	spell == "Maul" or spell == "Cleave") and abar.h2h then
 		hd,ld,ohd,lhd = UnitDamage("player")
 		hd,ld= hd-math.fmod(hd,1),ld-math.fmod(ld,1)
 		if pofft == 0 then pofft=offt end
 		pont = ont
 		tons = ons
 		ons = ons - math.fmod(ons,0.01)
-		Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
+		if (player) then
+			Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
+		else
+			ebar_set()
+		end
 	end
 end
 
@@ -212,3 +233,20 @@ function ebar_VL()
 	ebar_ohText:SetJustifyH("Left")
 end
 
+function ebar_set()
+	eons,eoffs = UnitAttackSpeed("target")
+	eons = eons - math.fmod(eons,0.01)
+	ebar_mhs(eons,"Target".."["..eons.."s]",1,.1,.1)
+end
+
+function ebar_mhs(bartime,text,r,g,b)
+	ebar_mh:Hide()
+	ebar_mh.txt = text
+	ebar_mh.st = GetTime()
+	ebar_mh.et = GetTime() + bartime
+	ebar_mh:SetStatusBarColor(r,g,b)
+	ebar_mhText:SetText(text)
+	ebar_mh:SetMinMaxValues(ebar_mh.st,ebar_mh.et)
+	ebar_mh:SetValue(ebar_mh.st)
+	ebar_mh:Show()
+end
