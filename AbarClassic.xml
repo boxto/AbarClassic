@@ -5,12 +5,9 @@
 		<OnLoad>
 			self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 			self:RegisterEvent("PLAYER_LEAVE_COMBAT")
-			self:RegisterEvent("VARIABLES_LOADED")
-			
-		</OnLoad> 
-	<OnEvent>
-		Abar_OnEvent (event, CombatLogGetCurrentEventInfo());
-	</OnEvent>
+			self:RegisterEvent("ADDON_LOADED")
+		</OnLoad>
+		<OnEvent function="Abar_OnEvent"/>
   </Scripts>
   </Frame>
 	<Frame name="Abar_Frame" toplevel="true" enableMouse="true" movable = "true" parent="UIParent" hidden="true">

@@ -1,6 +1,7 @@
 ## Interface: 80100
 ## Title: AbarClassic
 ## Author: Boxto
+## SavedVariables: abar
 
 AbarClassic.lua
 AbarClassic.xml

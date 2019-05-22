@@ -57,7 +57,7 @@ function Abar_loaded()
 	SlashCmdList["ATKBAR"] = Abar_chat;
 	SLASH_ATKBAR1 = "/abar";
 	SLASH_ATKBAR2 = "/atkbar";
-	if not(abar) then abar={} end
+	if abar == nil then abar={} end
 	if abar.range == nil then
 		abar.range=true
 	end
@@ -67,6 +67,8 @@ function Abar_loaded()
 	if abar.timer == nil then
 		abar.timer=true
 	end
+	if abar.pvp == nil then abar.pvp = true end
+	if abar.mob == nil then abar.mob = true end
 
 
 	Abar_Mhr:SetPoint("LEFT",Abar_Frame,"TOPLEFT",6,-13)
@@ -76,16 +78,18 @@ function Abar_loaded()
 	ebar_VL()
 end
 
-function Abar_OnEvent(event, ...)
-	if (event == "COMBAT_LOG_EVENT_UNFILTERED") then
-		local subevent = select(2, ...)
-		local sourceGUID = select(4, ...)
-		local destGUID = select(8, ...)
+
+
+function Abar_OnEvent(self, event, arg1, ...)
+	if (event == "COMBAT_LOG_EVENT_UNFILTERED" and abar ~= nil) then
+		local subevent = select(2, CombatLogGetCurrentEventInfo())
+		local sourceGUID = select(4, CombatLogGetCurrentEventInfo())
+		local destGUID = select(8, CombatLogGetCurrentEventInfo())
 		if (sourceGUID == UnitGUID("player")) then
 			if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
 				Abar_selfhit()
 			elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h then
-				spell = select(13, ...)
+				spell = select(13, CombatLogGetCurrentEventInfo())
 				Abar_spellhit(spell, true)
 			end
 		elseif (destGUID == UnitGUID("player") and sourceGUID == UnitGUID("target")) then
@@ -94,7 +98,7 @@ function Abar_OnEvent(event, ...)
 					if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
 						ebar_set()
 					elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h then
-						spell = select(13, ...)
+						spell = select(13, CombatLogGetCurrentEventInfo())
 						Abar_spellhit(spell, false)
 					end
 				end
@@ -107,9 +111,8 @@ function Abar_OnEvent(event, ...)
 			end
 		end
 	end
-	if event=="PLAYER_LEAVE_COMBAT" then Abar_reset() end
-	if event == "VARIABLES_LOADED" then Abar_loaded() end
-	if event == "VARIABLES_LOADED" then Abar_loaded() end
+	if event== "PLAYER_LEAVE_COMBAT" then Abar_reset() end
+	if (event == "ADDON_LOADED" and arg1 == "AbarClassic") then Abar_loaded() end
 end
 
 function Abar_spellhit(spell, player)
@@ -225,8 +228,6 @@ end
 -----------------------------------------------------------------------------------------------------------------------
 
 function ebar_VL()
-	if not abar.pvp then abar.pvp = true end
-	if not abar.mob then abar.mob = true end
 	ebar_mh:SetPoint("LEFT",ebar_Frame,"TOPLEFT",6,-13)
 	ebar_oh:SetPoint("LEFT",ebar_Frame,"TOPLEFT",6,-35)
 	ebar_mhText:SetJustifyH("Left")
