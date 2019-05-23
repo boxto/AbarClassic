@@ -88,7 +88,7 @@ function Abar_OnEvent(self, event, arg1, ...)
 		if (sourceGUID == UnitGUID("player")) then
 			if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
 				Abar_selfhit()
-			elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h then
+			elseif (subevent == ("SPELL_CAST_SUCCESS" or "SPELL_MISSED")) and abar.h2h then
 				spell = select(13, CombatLogGetCurrentEventInfo())
 				Abar_spellhit(spell, true)
 			end
@@ -97,7 +97,7 @@ function Abar_OnEvent(self, event, arg1, ...)
 				if (abar.pvp) then
 					if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
 						ebar_set()
-					elseif (string.find(subevent, "SPELL.*") ~= nil) and abar.h2h then
+					elseif (subevent == ("SPELL_CAST_SUCCESS" or "SPELL_MISSED")) and abar.h2h then
 						spell = select(13, CombatLogGetCurrentEventInfo())
 						Abar_spellhit(spell, false)
 					end
