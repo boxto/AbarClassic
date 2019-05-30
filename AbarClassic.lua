@@ -6,15 +6,13 @@ ons = 0.000
 offs= 0.000
 offh = 0
 onh  = 0
-epont=0.000
-epofft= 0.000
-eont = 0.000
-eofft= 0.000
 eons = 0.000
 eoffs= 0.000
-eoffh = 0
-eonh  = 0
 testvar = 0
+
+shoot_start = 0
+shoot_end = 0
+shoot_event_delay = 1.5
 
 function Abar_chat(msg)
 	msg = strlower(msg)
@@ -69,6 +67,9 @@ function Abar_loaded()
 	end
 	if abar.pvp == nil then abar.pvp = true end
 	if abar.mob == nil then abar.mob = true end
+	if abar.shoot_event_delay ~= nil then
+		shoot_event_delay = abar.shoot_event_delay
+	end
 
 
 	Abar_Mhr:SetPoint("LEFT",Abar_Frame,"TOPLEFT",6,-13)
@@ -88,16 +89,27 @@ function Abar_OnEvent(self, event, arg1, ...)
 		if (sourceGUID == UnitGUID("player")) then
 			if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
 				Abar_selfhit()
-			elseif (subevent == ("SPELL_CAST_SUCCESS" or "SPELL_MISSED")) and abar.h2h then
+			elseif ((subevent == "SPELL_CAST_SUCCESS") or (subevent == "SPELL_MISSED")) and abar.h2h then
 				spell = select(13, CombatLogGetCurrentEventInfo())
 				Abar_spellhit(spell, true)
+				if ((spell == "Shoot Gun") or (spell == "Shoot Bow") or (spell == "Shoot Crossbow")) then
+					shoot_end = GetTime()
+					shoot_event_delay = shoot_end - shoot_start
+					abar.shoot_event_delay = shoot_event_delay
+				end
+			elseif (subevent == ("SPELL_CAST_START")) and abar.h2h then
+				spell = select(13, CombatLogGetCurrentEventInfo())
+				if ((spell == "Shoot Gun") or (spell == "Shoot Bow") or (spell == "Shoot Crossbow")) then
+					shoot_start = GetTime()
+					Abar_rangehit(spell)
+				end
 			end
 		elseif (destGUID == UnitGUID("player") and sourceGUID == UnitGUID("target")) then
 			if (UnitIsPlayer("target")) then
 				if (abar.pvp) then
 					if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
 						ebar_set()
-					elseif (subevent == ("SPELL_CAST_SUCCESS" or "SPELL_MISSED")) and abar.h2h then
+					elseif ((subevent == "SPELL_CAST_SUCCESS") or (subevent == "SPELL_MISSED")) and abar.h2h then
 						spell = select(13, CombatLogGetCurrentEventInfo())
 						Abar_spellhit(spell, false)
 					end
@@ -115,6 +127,15 @@ function Abar_OnEvent(self, event, arg1, ...)
 	if (event == "ADDON_LOADED" and arg1 == "AbarClassic") then Abar_loaded() end
 end
 
+function Abar_rangehit(spell)
+	rs,rld,rhd = UnitRangedDamage("player")
+	rhd,rld= rhd-math.fmod(rhd,1),rld-math.fmod(rld,1)
+	trs=rs
+	rs = rs-math.fmod(rs,0.01)
+	Abar_Mhrs(shoot_event_delay, "Shoot["..(rs).."s]("..rhd.."-"..rld..")",1,.5,0)
+end
+	
+
 function Abar_spellhit(spell, player)
 	if (spell == "Raptor Strike" or spell == "Heroic Strike" or
 	spell == "Maul" or spell == "Cleave") and abar.h2h then
@@ -125,7 +146,7 @@ function Abar_spellhit(spell, player)
 		tons = ons
 		ons = ons - math.fmod(ons,0.01)
 		if (player) then
-			Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
+			Abar_Mhrs(tons,"Main["..(rs).."s]("..hd.."-"..ld..")",0,0,1)
 		else
 			ebar_set()
 		end
