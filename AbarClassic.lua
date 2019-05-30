@@ -146,7 +146,7 @@ function Abar_spellhit(spell, player)
 		tons = ons
 		ons = ons - math.fmod(ons,0.01)
 		if (player) then
-			Abar_Mhrs(tons,"Main["..(rs).."s]("..hd.."-"..ld..")",0,0,1)
+			Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
 		else
 			ebar_set()
 		end
