@@ -1,11 +1,9 @@
-pont= 0.000
-pofft= 0.000
-ont = 0.000
-offt= 0.000
-ons = 0.000
-offs= 0.000
-offh = 0
-onh  = 0
+prev_mh_time= 0.000
+prev_off_time= 0.000
+mh_time = 0.000
+off_time= 0.000
+mh_speed = 0.000
+off_speed = 0.000
 eons = 0.000
 eoffs= 0.000
 testvar = 0
@@ -13,6 +11,15 @@ testvar = 0
 shoot_start = 0
 shoot_end = 0
 shoot_event_delay = 1.5
+
+reset_spells =
+	{
+		["Heroic Strike"] = true,
+		["Cleave"] = true,
+		["Raptor Strike"] = true,
+		["Maul"] = true,
+		["Slam"] = true
+	}
 
 function Abar_chat(msg)
 	msg = strlower(msg)
@@ -88,7 +95,11 @@ function Abar_OnEvent(self, event, arg1, ...)
 		local destGUID = select(8, CombatLogGetCurrentEventInfo())
 		if (sourceGUID == UnitGUID("player")) then
 			if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
-				Abar_selfhit()
+				is_oh = select(21,CombatLogGetCurrentEventInfo())
+				if subevent == "SWING_MISSED" then
+					is_oh = select(13,CombatLogGetCurrentEventInfo())
+				end
+				Abar_selfhit(is_oh)
 			elseif ((subevent == "SPELL_CAST_SUCCESS") or (subevent == "SPELL_MISSED")) and abar.h2h then
 				spell = select(13, CombatLogGetCurrentEventInfo())
 				Abar_spellhit(spell, true)
@@ -123,7 +134,7 @@ function Abar_OnEvent(self, event, arg1, ...)
 			end
 		end
 	end
-	if event== "PLAYER_LEAVE_COMBAT" then Abar_reset() end
+	if event == "PLAYER_LEAVE_COMBAT" then Abar_reset() end
 	if (event == "ADDON_LOADED" and arg1 == "AbarClassic") then Abar_loaded() end
 end
 
@@ -137,62 +148,49 @@ end
 	
 
 function Abar_spellhit(spell, player)
-	if (spell == "Raptor Strike" or spell == "Heroic Strike" or
-	spell == "Maul" or spell == "Cleave") and abar.h2h then
-		hd,ld,ohd,lhd = UnitDamage("player")
-		hd,ld= hd-math.fmod(hd,1),ld-math.fmod(ld,1)
-		if pofft == 0 then pofft=offt end
-		pont = ont
-		tons = ons
-		ons = ons - math.fmod(ons,0.01)
+	if reset_spells[spell] and abar.h2h then
+		mh_low_dmg,mh_high_dmg,off_low_dmg,off_high_dmg = UnitDamage("player")
+		mh_high_dmg = mh_high_dmg-math.fmod(mh_high_dmg,1)
+		mh_low_dmg = mh_low_dmg-math.fmod(mh_low_dmg,1)
+		if prev_off_time == 0 then prev_off_time=off_time end
+		prev_mh_time = mh_time
+		total_mh_speed = mh_speed
+		mh_speed = mh_speed - math.fmod(mh_speed,0.01)
 		if (player) then
-			Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
+			Abar_Mhrs(total_mh_speed,"Main["..mh_speed.."s]("..mh_low_dmg.."-"..mh_high_dmg..")",0,0,1)
 		else
 			ebar_set()
 		end
 	end
 end
 
-function Abar_selfhit()
-ons,offs=UnitAttackSpeed("player");
-hd,ld,ohd,old = UnitDamage("player")
-hd,ld= hd-math.fmod(hd,1),ld-math.fmod(ld,1)
-if old then
-	ohd,old = ohd-math.fmod(ohd,1),old-math.fmod(old,1)
-end	
-if offs then
-	ont,offt=GetTime(),GetTime()
-	if ((math.abs((ont-pont)-ons) <= math.abs((offt-pofft)-offs))and not(onh <= offs/ons)) or offh >= ons/offs then
-		if pofft == 0 then pofft=offt end
-		pont = ont
-		tons = ons
-		offh = 0
-		onh = onh +1
-		ons = ons - math.fmod(ons,0.01)
-		Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
-	else
-		pofft = offt
-		offh = offh+1
-		onh = 0
-		ohd,old = ohd-math.fmod(ohd,1),old-math.fmod(old,1)
-		offs = offs - math.fmod(offs,0.01)
-		Abar_Ohs(offs,"Off["..offs.."s]("..ohd.."-"..old..")",0,0,1)
-	end
+function Abar_selfhit(oh)
+mh_speed,off_speed = UnitAttackSpeed("player");
+mh_low_dmg,mh_high_dmg,off_low_dmg,off_high_dmg = UnitDamage("player")
+mh_high_dmg = mh_high_dmg-math.fmod(mh_high_dmg,1)
+mh_low_dmg = mh_low_dmg-math.fmod(mh_low_dmg,1)
+
+mh_time,off_time=GetTime(),GetTime()
+if (oh == false) then
+	if prev_off_time == 0 then prev_off_time=off_time end
+	prev_mh_time = mh_time
+	total_mh_speed = mh_speed
+	mh_speed = mh_speed - math.fmod(mh_speed,0.01)
+	Abar_Mhrs(total_mh_speed,"Main["..mh_speed.."s]("..mh_low_dmg.."-"..mh_high_dmg..")",0,0,1)
 else
-	ont=GetTime()
-	tons = ons
-	ons = ons - math.fmod(ons,0.01)
-	Abar_Mhrs(tons,"Main["..ons.."s]("..hd.."-"..ld..")",0,0,1)
+	prev_off_time = off_time
+	off_high_dmg = off_high_dmg-math.fmod(off_high_dmg,1)
+	off_low_dmg = off_low_dmg-math.fmod(off_low_dmg,1)
+	off_speed = off_speed - math.fmod(off_speed,0.01)
+	Abar_Ohs(off_speed,"Off["..off_speed.."s]("..off_low_dmg.."-"..off_high_dmg..")",0,0,1)
 end
 end
 
 function Abar_reset()
-	pont=0.000
-	pofft= 0.000
-	ont=0.000
-	offt= 0.000
-	onid=0
-	offid=0
+	prev_mh_time = 0.000
+	prev_off_time = 0.000
+	mh_time = 0.000
+	off_time = 0.000
 end
 
 function Abar_Update(self)
