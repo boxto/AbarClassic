@@ -6,7 +6,6 @@ mh_speed = 0.000
 off_speed = 0.000
 eons = 0.000
 eoffs= 0.000
-testvar = 0
 
 shoot_start = 0
 shoot_end = 0
@@ -18,7 +17,19 @@ reset_spells =
 		["Cleave"] = true,
 		["Raptor Strike"] = true,
 		["Maul"] = true,
-		["Slam"] = true
+		["Slam"] = true,
+		["Escape Artist"] = true,
+		--Potions
+		-- Healing Potions
+		["Major Healing Potion"] = true,
+		["Superior Healing Potion"] = true,
+		["Greater Healing Potion"] = true,
+		["Healing Potion"] = true,
+		["Lesser Healing Potion"] = true,
+		["Minor Healing Potion"] = true,
+		["Combat Healing Potion"] = true,
+		["Discolored Healing Potion"] = true,
+		-- Other pots reset?
 	}
 
 function Abar_chat(msg)
@@ -46,6 +57,8 @@ function Abar_chat(msg)
 	elseif msg=="mob" then
 		abar.mob = not(abar.mob)
 		print('mobs are'.. Abar_Boo(abar.mob));
+	elseif msg=="enemy" then
+		abar.enemy = not(abar.enemy)
 	else
 		print('use any of these to control Abar:');
 		print('Lock- to lock and hide the anchor');
@@ -55,6 +68,7 @@ function Abar_chat(msg)
 		print('range- to turn on and off the ranged bar');
 		print('pvp- to turn on and off the enemy player bar(s)');
 		print('mob- to turn on and off the enemy mob bar(s)');
+		print('enemy- to turn on and off always showing target swing (default only shows if the player is target of target)')
 	end
 end
 
@@ -63,14 +77,17 @@ function Abar_loaded()
 	SLASH_ATKBAR1 = "/abar";
 	SLASH_ATKBAR2 = "/atkbar";
 	if abar == nil then abar={} end
+	if abar.enemy_swing == nil then
+		abar.enemy_swing = true
+	end
 	if abar.range == nil then
-		abar.range=true
+		abar.range = true
 	end
 	if abar.h2h == nil then
-		abar.h2h=true
+		abar.h2h = true
 	end
 	if abar.timer == nil then
-		abar.timer=true
+		abar.timer = true
 	end
 	if abar.pvp == nil then abar.pvp = true end
 	if abar.mob == nil then abar.mob = true end
@@ -86,6 +103,65 @@ function Abar_loaded()
 	ebar_VL()
 end
 
+function player_cleu(subevent)
+	if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
+		is_oh = select(21,CombatLogGetCurrentEventInfo())
+		if subevent == "SWING_MISSED" then
+			is_oh = select(13,CombatLogGetCurrentEventInfo())
+		end
+		Abar_selfhit(is_oh)
+	elseif ((subevent == "SPELL_CAST_SUCCESS") or (subevent == "SPELL_MISSED")) and abar.h2h then
+		spell = select(13, CombatLogGetCurrentEventInfo())
+		Abar_spellhit(spell, true)
+		if ((spell == "Shoot Gun") or (spell == "Shoot Bow") or (spell == "Shoot Crossbow")) then
+			shoot_end = GetTime()
+			shoot_event_delay = shoot_end - shoot_start
+			abar.shoot_event_delay = shoot_event_delay
+		end
+	elseif (subevent == ("SPELL_CAST_START")) and abar.h2h then
+		spell = select(13, CombatLogGetCurrentEventInfo())
+		if ((spell == "Shoot Gun") or (spell == "Shoot Bow") or (spell == "Shoot Crossbow")) then
+			shoot_start = GetTime()
+			Abar_rangehit(spell)
+		end
+	end
+end
+
+function target_cleu(subevent)
+	if (UnitIsPlayer("target")) then
+		if (abar.pvp) then
+			if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
+				ebar_set()
+			elseif ((subevent == "SPELL_CAST_SUCCESS") or (subevent == "SPELL_MISSED")) and abar.h2h then
+				spell = select(13, CombatLogGetCurrentEventInfo())
+				Abar_spellhit(spell, false)
+			end
+		end
+	else
+		if (abar.mob) then
+				if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
+					ebar_set()
+				end
+		end
+	end
+end
+		
+function player_equip_changed(inventorySlotId)
+	if inventorySlotId == 17 then
+		Abar_selfhit(true)
+	elseif inventorySlotId == 16 then
+		Abar_selfhit(false)
+	end
+end
+
+function unit_spellcast_succeeded(spellid)
+	if spellid == 2366 or spellid == 10248 then
+		Abar_selfhit(false)
+		if C_PaperDollInfo.OffhandHasWeapon() then
+			Abar_selfhit(true)
+		end
+	end
+end
 
 
 function Abar_OnEvent(self, event, arg1, ...)
@@ -94,48 +170,19 @@ function Abar_OnEvent(self, event, arg1, ...)
 		local sourceGUID = select(4, CombatLogGetCurrentEventInfo())
 		local destGUID = select(8, CombatLogGetCurrentEventInfo())
 		if (sourceGUID == UnitGUID("player")) then
-			if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
-				is_oh = select(21,CombatLogGetCurrentEventInfo())
-				if subevent == "SWING_MISSED" then
-					is_oh = select(13,CombatLogGetCurrentEventInfo())
-				end
-				Abar_selfhit(is_oh)
-			elseif ((subevent == "SPELL_CAST_SUCCESS") or (subevent == "SPELL_MISSED")) and abar.h2h then
-				spell = select(13, CombatLogGetCurrentEventInfo())
-				Abar_spellhit(spell, true)
-				if ((spell == "Shoot Gun") or (spell == "Shoot Bow") or (spell == "Shoot Crossbow")) then
-					shoot_end = GetTime()
-					shoot_event_delay = shoot_end - shoot_start
-					abar.shoot_event_delay = shoot_event_delay
-				end
-			elseif (subevent == ("SPELL_CAST_START")) and abar.h2h then
-				spell = select(13, CombatLogGetCurrentEventInfo())
-				if ((spell == "Shoot Gun") or (spell == "Shoot Bow") or (spell == "Shoot Crossbow")) then
-					shoot_start = GetTime()
-					Abar_rangehit(spell)
-				end
-			end
-		elseif (destGUID == UnitGUID("player") and sourceGUID == UnitGUID("target")) then
-			if (UnitIsPlayer("target")) then
-				if (abar.pvp) then
-					if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
-						ebar_set()
-					elseif ((subevent == "SPELL_CAST_SUCCESS") or (subevent == "SPELL_MISSED")) and abar.h2h then
-						spell = select(13, CombatLogGetCurrentEventInfo())
-						Abar_spellhit(spell, false)
-					end
-				end
-			else
-				if (abar.mob) then
-						if (string.find(subevent, "SWING.*") ~= nil) and abar.h2h then
-							ebar_set()
-						end
-				end
-			end
+			player_cleu(subevent)
+		elseif (destGUID == UnitGUID("player") or abar.enemy) and sourceGUID == UnitGUID("target") then
+			target_cleu(subevent)
 		end
 	end
+	if event == "PLAYER_EQUIPMENT_CHANGED" then player_equip_changed(arg1) end
 	if event == "PLAYER_LEAVE_COMBAT" then Abar_reset() end
 	if (event == "ADDON_LOADED" and arg1 == "AbarClassic") then Abar_loaded() end
+	if event == "UNIT_SPELLCAST_SUCCEEDED" then unit_spellcast_succeeded()
+		if arg1 == "player" then
+			unit_spellcast_succeeded(select(2,...))
+		end
+	end
 end
 
 function Abar_rangehit(spell)

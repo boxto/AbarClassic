@@ -6,6 +6,8 @@
 			self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 			self:RegisterEvent("PLAYER_LEAVE_COMBAT")
 			self:RegisterEvent("ADDON_LOADED")
+			self:RegisterEvent("PLAYER_EQUIPMENT_CHANGED")
+			self:RegisterEvent("UNIT_SPELLCAST_SUCCEEDED")
 		</OnLoad>
 		<OnEvent function="Abar_OnEvent"/>
   </Scripts>
